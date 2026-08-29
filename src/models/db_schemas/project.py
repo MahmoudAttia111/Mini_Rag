@@ -1,4 +1,4 @@
-cat > src/models/db_schemas/project.py << 'EOF'
+ 
 from pydantic import BaseModel, Field, validator
 from typing import Optional
 from bson.objectid import ObjectId
@@ -15,4 +15,4 @@ class Project(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
-EOF
+ 
