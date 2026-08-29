@@ -10,6 +10,7 @@ certifi==2026.7.22
 charset-normalizer==3.5.1
 click==8.4.2
 dataclasses-json==0.6.7
+dnspython==2.8.0
 fastapi==0.110.2
 frozenlist==1.8.0
 greenlet==3.5.5
@@ -26,6 +27,7 @@ langchain-core==0.1.53
 langchain-text-splitters==0.0.2
 langsmith==0.1.147
 marshmallow==3.26.2
+motor==3.3.2
 multidict==6.7.1
 mypy_extensions==1.1.0
 numpy==1.26.4
@@ -35,6 +37,7 @@ propcache==0.5.2
 pydantic==2.13.4
 pydantic-settings==2.2.1
 pydantic_core==2.46.4
+pymongo==4.6.1
 PyMuPDF==1.24.3
 PyMuPDFb==1.24.3
 python-dotenv==1.0.1
