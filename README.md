@@ -5,18 +5,7 @@ This is a minimal implementation of the RAG (Retrieval-Augmented Generation) mod
 ## The Course
 
 This is an educational project where all of the code was explained (step by step) via a set of Arabic YouTube videos by Abu Bakr (bakrianoo). This repository documents my own implementation while following along with the course.
-
-| # | Title | Link | Codes |
-|---|---|---|---|
-| 1 | About the Course ماذا ولمـــاذا | Video | NA |
-| 2 | What will we build ماذا سنبنى في المشروع | Video | NA |
-| 3 | Setup your tools الأدوات الأساسية | Video | NA |
-| 4 | Project Architecture | Video | branch |
-| 5 | Welcome to FastAPI | Video | branch |
-| 6 | Nested Routes + Env Values | Video | branch |
-| 7 | Uploading a File | Video | branch |
-| 8 | MongoDB Integration | Video | branch |
-| 9 | Indexes, Assets & Docker Credentials | Video | tutorial-06 |
+ 
 
 ## Requirements
 
