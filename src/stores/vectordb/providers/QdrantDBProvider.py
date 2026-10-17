@@ -7,44 +7,49 @@ from models.db_schemes import RetrievedDocument
 
 class QdrantDBProvider(VectorDBInterface):
 
-    def __init__(self, db_path: str, distance_method: str):
+    def __init__(self, db_client: str, default_vector_size: int = 786,
+                 distance_method: str = None, index_threshold: int = 100):
+
         self.client = None
-        self.db_path = db_path
+        self.db_client = db_client
         self.distance_method = None
+        self.default_vector_size = default_vector_size
 
         if distance_method == DistanceMethodEnums.COSINE.value:
             self.distance_method = models.Distance.COSINE
         elif distance_method == DistanceMethodEnums.DOT.value:
             self.distance_method = models.Distance.DOT
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger("uvicorn")
 
-    def connect(self):
-        self.client = QdrantClient(path=self.db_path)
+    async def connect(self):
+        self.client = QdrantClient(path=self.db_client)
 
-    def disconnect(self):
+    async def disconnect(self):
         self.client = None
 
-    def is_collection_existed(self, collection_name: str) -> bool:
+    async def is_collection_existed(self, collection_name: str) -> bool:
         return self.client.collection_exists(collection_name=collection_name)
 
-    def list_all_collections(self) -> List:
+    async def list_all_collections(self) -> List:
         return self.client.get_collections()
 
-    def get_collection_info(self, collection_name: str) -> dict:
+    async def get_collection_info(self, collection_name: str) -> dict:
         return self.client.get_collection(collection_name=collection_name)
 
-    def delete_collection(self, collection_name: str):
-        if self.is_collection_existed(collection_name):
+    async def delete_collection(self, collection_name: str):
+        if await self.is_collection_existed(collection_name):
+            self.logger.info(f"Deleting collection: {collection_name}")
             return self.client.delete_collection(collection_name=collection_name)
 
-    def create_collection(self, collection_name: str,
+    async def create_collection(self, collection_name: str,
                                 embedding_size: int,
                                 do_reset: bool = False):
         if do_reset:
-            _ = self.delete_collection(collection_name=collection_name)
+            _ = await self.delete_collection(collection_name=collection_name)
 
-        if not self.is_collection_existed(collection_name):
+        if not await self.is_collection_existed(collection_name):
+            self.logger.info(f"Creating new Qdrant collection: {collection_name}")
             _ = self.client.create_collection(
                 collection_name=collection_name,
                 vectors_config=models.VectorParams(
@@ -56,11 +61,11 @@ class QdrantDBProvider(VectorDBInterface):
 
         return False
 
-    def insert_one(self, collection_name: str, text: str, vector: list,
-                         metadata: dict = None,
-                         record_id: str = None):
-        if not self.is_collection_existed(collection_name):
-            self.logger.error(f"Can not insert new record to non-existed collection: {collection_name}")
+    async def insert_one(self, collection_name: str, text: str, vector: list,
+                         metadata: dict = None, record_id: str = None):
+
+        if not await self.is_collection_existed(collection_name):
+            self.logger.error(f"Can not insert into non-existed collection: {collection_name}")
             return False
 
         try:
@@ -68,21 +73,22 @@ class QdrantDBProvider(VectorDBInterface):
                 collection_name=collection_name,
                 records=[
                     models.Record(
-                        id=[record_id],
+                        id=record_id,
                         vector=vector,
                         payload={"text": text, "metadata": metadata}
                     )
                 ]
             )
         except Exception as e:
-            self.logger.error(f"Error while inserting batch: {e}")
+            self.logger.error(f"Error while inserting record: {e}")
             return False
 
         return True
 
-    def insert_many(self, collection_name: str, texts: list,
+    async def insert_many(self, collection_name: str, texts: list,
                           vectors: list, metadata: list = None,
                           record_ids: list = None, batch_size: int = 50):
+
         if metadata is None:
             metadata = [None] * len(texts)
 
@@ -91,18 +97,17 @@ class QdrantDBProvider(VectorDBInterface):
 
         for i in range(0, len(texts), batch_size):
             batch_end = i + batch_size
-            batch_texts = texts[i:batch_end]
-            batch_vectors = vectors[i:batch_end]
-            batch_metadata = metadata[i:batch_end]
-            batch_record_ids = record_ids[i:batch_end]
 
             batch_records = [
                 models.Record(
-                    id=batch_record_ids[x],
-                    vector=batch_vectors[x],
-                    payload={"text": batch_texts[x], "metadata": batch_metadata[x]}
+                    id=record_ids[i:batch_end][x],
+                    vector=vectors[i:batch_end][x],
+                    payload={
+                        "text": texts[i:batch_end][x],
+                        "metadata": metadata[i:batch_end][x]
+                    }
                 )
-                for x in range(len(batch_texts))
+                for x in range(len(texts[i:batch_end]))
             ]
 
             try:
@@ -116,7 +121,8 @@ class QdrantDBProvider(VectorDBInterface):
 
         return True
 
-    def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
+    async def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
+
         results = self.client.search(
             collection_name=collection_name,
             query_vector=vector,
@@ -127,9 +133,6 @@ class QdrantDBProvider(VectorDBInterface):
             return None
 
         return [
-            RetrievedDocument(**{
-                "score": result.score,
-                "text": result.payload["text"],
-            })
+            RetrievedDocument(score=result.score, text=result.payload["text"])
             for result in results
         ]
