@@ -14,4 +14,4 @@ qdrant-client==1.10.1
 # Monitoring and metrics
 prometheus-client==0.21.1
 starlette-exporter==0.23.0
-fastapi-health==0.4.0a
+fastapi-health==0.4.0
