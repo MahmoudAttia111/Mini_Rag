@@ -3,5 +3,8 @@ set -e
 
 echo "Running database migrations..."
 cd /app/models/db_schemes/minirag/
-alembic upgrade head
+python -c "from alembic.config import main; main(['upgrade', 'head'])"
 cd /app
+
+echo "Starting application..."
+exec "$@"
